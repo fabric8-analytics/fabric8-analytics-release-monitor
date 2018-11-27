@@ -8,4 +8,4 @@ ENABLE_SCHEDULING = os.environ.get('ENABLE_SCHEDULING', '1')\
 PROBE_FILE_LOCATION = "/tmp/release_monitoring/liveness.txt"
 # Sleep interval in minutes.
 SLEEP_INTERVAL = os.environ.get('SLEEP_INTERVAL', 20)
-DEBUG = os.environ.get('DEBUG', False) in ("1", True)
+DEBUG = os.environ.get('DEBUG', False)
