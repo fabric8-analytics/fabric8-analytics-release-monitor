@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-directories="release_monitor integration_tests"
+directories="release_monitor integration_tests tests"
 separate_files="setup.py"
 pass=0
 fail=0
