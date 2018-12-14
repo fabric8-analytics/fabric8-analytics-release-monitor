@@ -1,7 +1,7 @@
 #!/bin/bash
 
 directories="release_monitor/ integration_tests/ tests"
-separate_files="cli.py setup.py"
+separate_files="setup.py"
 
 pass=0
 fail=0
