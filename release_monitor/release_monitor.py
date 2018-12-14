@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 
+from time import sleep
 import feedparser
 import requests
 from f8a_worker.setup_celery import init_celery, init_selinon
