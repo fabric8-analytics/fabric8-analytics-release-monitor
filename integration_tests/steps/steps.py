@@ -1,15 +1,15 @@
 """Steps for release monitoring tests."""
-from behave import *
+from behave import given, then
 
 
 @given('Container is running')
-def step_impl(context):
+def container_is_running(context):
     """Check if cointainer is running."""
     assert context.release_monitor.status == 'created'
 
 
 @then('Check container logs for "{count}" received elements from "{registry}"')
-def step_impl(context, count, registry):
+def check_container_logs(context, count, registry):
     """Check container logs for messages."""
     event_count = 0
     for e in context.release_monitor.logs(stream=True):
