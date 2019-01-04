@@ -24,7 +24,8 @@ function prepare_venv() {
 
 [ "$NOVENV" == "1" ] || prepare_venv || exit 1
 
-behave ./integration_tests
+# don't run BDD tests on CI
+# behave ./integration_tests
 
 cd tests || exit
 PYTHONDONTWRITEBYTECODE=1 python3 "$(which pytest)" --cov=../release_monitor/ --cov-report term-missing --cov-fail-under=$COVERAGE_THRESHOLD -vv -s .
