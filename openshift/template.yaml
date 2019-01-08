@@ -143,7 +143,7 @@ parameters:
 - description: Variable which defines time between requests for updates from registries
   displayName: Sleep interval
   name: SLEEP_INTERVAL
-  value: "60"
+  value: "10"
 
 - description: Variable which defines NPM registry url
   displayName: NPM registry URL
