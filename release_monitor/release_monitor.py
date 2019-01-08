@@ -114,6 +114,8 @@ class ReleaseMonitor():
         self.log.info("Registered signal handler for liveness probe")
 
         while True:
+            self.renew_rss_feeds()
+
             for i in self.npm_feed.entries:
                 package_name = i['title']
                 package_url = NPM_URL + "-/package/{package_name}" \
@@ -146,8 +148,7 @@ class ReleaseMonitor():
                     self.run_package_analisys(package_name,
                                               'pypi', package_latest_version)
 
-        self.renew_rss_feeds()
-        sleep(60 * SLEEP_INTERVAL)
+            sleep(60 * SLEEP_INTERVAL)
 
 
 if __name__ == '__main__':
