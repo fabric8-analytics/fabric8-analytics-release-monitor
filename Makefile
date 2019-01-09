@@ -10,7 +10,7 @@ REGISTRY?=quay.io
 DEFAULT_TAG=latest
 TESTS_IMAGE=fabric8-analytics-release-monitor-tests
 
-.PHONY: all docker-build fast-docker-build test get-image-name get-image-repository
+.PHONY: all docker-build fast-docker-build test get-image-name get-image-repository mypy
 
 all: fast-docker-build
 
@@ -35,3 +35,9 @@ get-image-repository:
 
 get-push-registry:
 	@echo $(REGISTRY)
+
+mypy:
+	mypy --ignore-missing-imports release_monitor/*.py # you need to run pip install mypy by hand
+
+coverage:
+	pytest --cov="release_monitor/" --cov-report html:/tmp/cov_report -vv release_monitor/ tests/

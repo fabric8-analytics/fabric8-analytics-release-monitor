@@ -2,21 +2,177 @@
 
 """The release monitor project."""
 
-import json
+# std imports:
 import logging
 import os
 import sys
 
 from time import sleep
+from abc import ABC, abstractmethod
+from typing import Set, Union
+# wow fix CI :)
+assert Set
+assert Union
+
+# 3rt party imports:
 import feedparser
 import requests
+
 from f8a_worker.setup_celery import init_celery, init_selinon
 from selinon import run_flow
 
+# local imports:
 from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, \
     PROBE_FILE_LOCATION, SLEEP_INTERVAL, DEBUG
 
 logger = logging.getLogger(__name__)
+
+
+class Package:
+    """Encapsulate name and version."""
+
+    def __init__(self, name, version):
+        # type: (str, str) -> None
+        """Create new package."""
+        self.name = name
+        self.version = version
+
+    def __eq__(self, other):
+        """Test equality element by element."""
+        return (self.name, self.version) == (other.name, other.version)
+
+    def __hash__(self):
+        """For usage in sets."""
+        return hash((self.name, self.version))
+
+
+class AbstractMonitor(ABC):
+    """
+    Abstract monitoring component for any feed (XML, JSON ...).
+
+    This class implements common logic, like set comparison. Implement your own child class
+    for each specific feed.
+    """
+
+    def __init__(self):
+        # type: () -> None
+        """
+        Create new monitor with sets of old and new packages.
+
+        Don't immediately schedule all packages in the feed.
+        TODO: decide on this ^
+        """
+        self.old_set = self.fetch_feed()  # type: Set[Package]
+        self.new_set = self.old_set  # type: Set[Package]
+
+    @abstractmethod
+    def fetch_feed(self):
+        # type: () -> Set[Package]
+        """
+        Implement your feed update logic here (e.g. load new XML file from the Internet).
+
+        Return the new feed as a set of packages.
+        """
+        pass
+
+    def get_updated_packages(self):
+        # type: () -> Set[Package]
+        """Run this function in an infinite loop to get incremental updates for your feed."""
+        self.old_set = self.new_set
+        self.new_set = self.fetch_feed()
+        return self.new_set - self.old_set
+
+
+class PypiMonitor(AbstractMonitor):
+    """Monitor Python Package Index."""
+
+    def __init__(self, url=None):
+        """Store some PyPi specific data."""
+        self.pypi_url = url or PYPI_URL
+        super(PypiMonitor, self).__init__()
+
+    def fetch_feed(self):
+        """Fetch PyPi RSS updates."""
+        def create_package_from_pypi_dict(dict):
+            title_parts = dict['title'].split(' ')
+            return Package(title_parts[0], title_parts[1])
+
+        list_of_pypi_updates = feedparser.parse(self.pypi_url + "rss/updates.xml").entries
+        try:
+            updated_packages = set(map(create_package_from_pypi_dict, list_of_pypi_updates))
+        except KeyError:
+            # if the "title" does not exist, catch the error and return nothing
+            return set()
+        except IndexError:
+            # if the "title" does not contain name and version, catch the error and return nothing
+            return set()
+
+        return updated_packages
+
+
+class NPMMonitor(AbstractMonitor):
+    """Monitor for the NPM package registry."""
+
+    def __init__(self, url=None):
+        """Store some NPM specific data."""
+        self.npm_url = url or NPM_URL + "-/rss"
+        super(NPMMonitor, self).__init__()
+
+    def fetch_pkg_names_from_feed(self):
+        # type: () -> Union[Set[str], None]
+        """Contact NPM repository and get a list of updated packages."""
+        npm_feed = feedparser.parse(self.npm_url)
+        try:
+            r = set(map(lambda x: x['title'], npm_feed.entries))
+            return r
+        except KeyError:
+            return None
+
+    @staticmethod
+    def fetch_latest_package_version(package):
+        # type: (str) -> Union[str, None]
+        """Contact NPM repository and get the latest version for the package."""
+        package_url = NPM_URL + "-/package/{}/dist-tags".format(package)
+        try:
+            req = requests.get(package_url, headers={'content-type': 'application/json'})
+            if req.status_code == 200:
+                body = req.json()
+                return body['latest']
+        except ValueError:
+            # The body was not a valid JSON
+            return None
+        except KeyError:
+            # The body was a valid JSON, but it did not contain version field
+            return None
+
+    def fetch_feed(self):
+        """
+        Fetch the NPM feed.
+
+        This one is a bit more tricky as the feed itself does not contain version number. So there
+        are multiple possibilities how to solve this:
+
+        a) don't care, fetch the feed, for each entry do additional HTTP request and get the newest
+        version as well. (motto: premature optimization is the root of all evil)
+        b) create a local cache and try it before performing the request itself
+        c) reimplement the logic from abstract base class and just calculate set(pkg_names) -
+        - set(old_names)
+
+        I'll go with the first one for now.
+        """
+        npm_feed = self.fetch_pkg_names_from_feed()
+        if npm_feed is None:
+            return set()
+
+        def create_package_object(pkg_name):
+            # type: (str) -> Union[Package, None]
+            version = NPMMonitor.fetch_latest_package_version(pkg_name)
+            return None if version is None else Package(pkg_name, version)
+
+        def not_none(x):
+            return x is not None
+
+        return set(filter(not_none, map(create_package_object, npm_feed)))
 
 
 class ReleaseMonitor():
@@ -24,6 +180,8 @@ class ReleaseMonitor():
 
     def __init__(self):
         """Constructor."""
+        # Set up logging
+        # TODO: this seems overcomplicated, but I'll keep it here for now
         self.log = logging.getLogger(__name__)
         formatter = logging.Formatter('%(asctime)s - '
                                       '%(name)s - %(levelname)s'
@@ -32,17 +190,22 @@ class ReleaseMonitor():
         logging_handler.setFormatter(formatter)
         self.log.addHandler(logging_handler)
         self.log.level = logging.DEBUG
-        self.old_npm_feed = None
-        self.npm_feed = feedparser.parse(NPM_URL + "-/rss")
-        self.old_pypi_feed = None
-        self.pypi_feed = feedparser.parse(PYPI_URL + "rss/updates.xml")
+
+        # Liveness probe for OKD
         self.create_liveness_probe()
 
+        # Create PyPi monitor
+        self.pypi_monitor = PypiMonitor()
+
+        # Create NPM monitor
+        self.npm_monitor = NPMMonitor()
+
+        # Initialize Selinon if we want to run in production
         if ENABLE_SCHEDULING:
             init_celery(result_backend=False)
             init_selinon()
 
-    def run_package_analisys(self, name, ecosystem, version):
+    def run_package_analysis(self, name, ecosystem, version):
         """Run Selinon flow for analyses.
 
         :param name: name of the package to analyse
@@ -61,41 +224,6 @@ class ReleaseMonitor():
                       "with node_args: '%s'", 'bayesianFlow', node_args)
         return run_flow('bayesianFlow', node_args)
 
-    def entry_in_previous_npm_set(self, entry):
-        """Check if the RSS entry has been in the old npm feed."""
-        if self.old_npm_feed is None:
-            return False
-
-        if entry in self.old_npm_feed:
-            return True
-        else:
-            return False
-
-    def entry_in_previous_pypi_set(self, entry):
-        """Check if the RSS entry has been in the old pypi feed."""
-        if self.old_pypi_feed is None:
-            return False
-
-        if entry in self.old_pypi_feed:
-            return True
-        else:
-            return False
-
-    def renew_rss_feeds(self):
-        """Fetch new RSS feed and save the old one for comparison."""
-        if sorted(self.old_pypi_feed.entries) == \
-                sorted(self.pypi_feed.entries):
-            self.pypi_feed = feedparser.parse(PYPI_URL + "rss/updates.xml")
-        else:
-            self.old_pypi_feed = self.pypi_feed
-            self.pypi_feed = feedparser.parse(PYPI_URL + "rss/updates.xml")
-
-        if sorted(self.old_npm_feed.entries) == sorted(self.npm_feed.entries):
-            self.npm_feed = feedparser.parse(NPM_URL + "-/rss")
-        else:
-            self.old_pypi_feed = self.pypi_feed
-            self.npm_feed = feedparser.parse(NPM_URL + "-/rss")
-
     def create_liveness_probe(self):
         """Liveness probe."""
         if os.path.isfile(PROBE_FILE_LOCATION):
@@ -112,41 +240,24 @@ class ReleaseMonitor():
     def run(self):
         """Run the monitor."""
         self.log.info("Registered signal handler for liveness probe")
+        self.log.info("Sleep interval: {}".format(SLEEP_INTERVAL))
+        self.log.info("Enabled scheduling: {}".format(ENABLE_SCHEDULING))
+        self.log.info("Debug profile: {}".format(DEBUG))
 
         while True:
-            self.renew_rss_feeds()
+            for pkg in self.pypi_monitor.get_updated_packages():
+                if DEBUG:
+                    self.log.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+                if ENABLE_SCHEDULING:
+                    self.log.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+                    self.run_package_analysis(pkg.name, 'pypi', pkg.version)
 
-            for i in self.npm_feed.entries:
-                package_name = i['title']
-                package_url = NPM_URL + "-/package/{package_name}" \
-                    "/dist-tags".format(package_name=package_name)
-                package_latest_version = json.loads(
-                    requests.get(package_url,
-                                 headers={'content-type':
-                                          'application/json'}).text)
+            for pkg in self.npm_monitor.get_updated_packages():
                 if DEBUG:
-                    self.log.info("Processing "
-                                  "package from npm: '%s':'%s'", package_name,
-                                  package_latest_version.get('latest'))
-                if ENABLE_SCHEDULING and \
-                        not self.entry_in_previous_npm_set(i):
-                    self.log.info("Scheduling "
-                                  "package from npm: '%s':'%s'", package_name,
-                                  package_latest_version.get('latest'))
-                    self.run_package_analisys(package_name,
-                                              'npm',
-                                              package_latest_version)
-            for i in self.pypi_feed.entries:
-                package_name, package_latest_version = i['title'].split(' ')
-                if DEBUG:
-                    self.log.info("Processing package from pypi: '%s':'%s'",
-                                  package_name, package_latest_version)
-                if ENABLE_SCHEDULING and \
-                        not self.entry_in_previous_pypi_set(i):
-                    self.log.info("Scheduling package from pypi: '%s':'%s'",
-                                  package_name, package_latest_version)
-                    self.run_package_analisys(package_name,
-                                              'pypi', package_latest_version)
+                    self.log.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
+                if ENABLE_SCHEDULING:
+                    self.log.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
+                    self.run_package_analysis(pkg.name, 'npm', pkg.version)
 
             sleep(60 * SLEEP_INTERVAL)
 
