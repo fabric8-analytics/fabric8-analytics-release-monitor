@@ -23,9 +23,22 @@ from selinon import run_flow
 
 # local imports:
 from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, \
-    PROBE_FILE_LOCATION, SLEEP_INTERVAL, DEBUG
+    PROBE_FILE_LOCATION, SLEEP_INTERVAL
 
-logger = logging.getLogger(__name__)
+
+def set_up_logger():
+    """Set up logging."""
+    loglevel = os.environ.get('LOGLEVEL', 'INFO').upper()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger('release_monitor')
+    logger.setLevel(loglevel)
+    logger.addHandler(handler)
+    return logger
+
+
+logger = set_up_logger()
 
 
 class Package:
@@ -180,16 +193,7 @@ class ReleaseMonitor():
 
     def __init__(self):
         """Constructor."""
-        # Set up logging
-        # TODO: this seems overcomplicated, but I'll keep it here for now
-        self.log = logging.getLogger(__name__)
-        formatter = logging.Formatter('%(asctime)s - '
-                                      '%(name)s - %(levelname)s'
-                                      ' - %(message)s')
-        logging_handler = logging.StreamHandler(sys.stdout)
-        logging_handler.setFormatter(formatter)
-        self.log.addHandler(logging_handler)
-        self.log.level = logging.DEBUG
+        logger.info("Starting the monitor service")
 
         # Liveness probe for OKD
         self.create_liveness_probe()
@@ -220,44 +224,43 @@ class ReleaseMonitor():
             'recursive_limit': 0
         }
 
-        self.log.info("Scheduling Selinon flow '%s' "
-                      "with node_args: '%s'", 'bayesianFlow', node_args)
+        logger.info("Scheduling Selinon flow '%s' "
+                    "with node_args: '%s'", 'bayesianFlow', node_args)
         return run_flow('bayesianFlow', node_args)
 
     def create_liveness_probe(self):
         """Liveness probe."""
         if os.path.isfile(PROBE_FILE_LOCATION):
-            self.log.info("Clean existing liveness probe")
+            logger.info("Clean existing liveness probe")
             os.remove(PROBE_FILE_LOCATION)
         else:
             probe = os.path.dirname(PROBE_FILE_LOCATION)
             if not os.path.exists(probe):
-                self.log.info("Create liveness probe")
+                logger.info("Create liveness probe")
                 os.makedirs(probe)
 
         return True
 
     def run(self):
         """Run the monitor."""
-        self.log.info("Registered signal handler for liveness probe")
-        self.log.info("Sleep interval: {}".format(SLEEP_INTERVAL))
-        self.log.info("Enabled scheduling: {}".format(ENABLE_SCHEDULING))
-        self.log.info("Debug profile: {}".format(DEBUG))
+        logger.info("Registered signal handler for liveness probe")
+        logger.info("Sleep interval: {}".format(SLEEP_INTERVAL))
+        logger.info("Enabled scheduling: {}".format(ENABLE_SCHEDULING))
 
         while True:
             for pkg in self.pypi_monitor.get_updated_packages():
-                if DEBUG:
-                    self.log.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
                 if ENABLE_SCHEDULING:
-                    self.log.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+                    logger.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
                     self.run_package_analysis(pkg.name, 'pypi', pkg.version)
+                else:
+                    logger.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
 
             for pkg in self.npm_monitor.get_updated_packages():
-                if DEBUG:
-                    self.log.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
                 if ENABLE_SCHEDULING:
-                    self.log.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
+                    logger.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
                     self.run_package_analysis(pkg.name, 'npm', pkg.version)
+                else:
+                    logger.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
 
             sleep(60 * SLEEP_INTERVAL)
 
