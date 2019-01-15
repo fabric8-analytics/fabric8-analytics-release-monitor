@@ -22,8 +22,7 @@ from f8a_worker.setup_celery import init_celery, init_selinon
 from selinon import run_flow
 
 # local imports:
-from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, \
-    PROBE_FILE_LOCATION, SLEEP_INTERVAL
+from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, SLEEP_INTERVAL
 
 
 def set_up_logger():
@@ -195,9 +194,6 @@ class ReleaseMonitor():
         """Constructor."""
         logger.info("Starting the monitor service")
 
-        # Liveness probe for OKD
-        self.create_liveness_probe()
-
         # Create PyPi monitor
         self.pypi_monitor = PypiMonitor()
 
@@ -228,22 +224,8 @@ class ReleaseMonitor():
                     "with node_args: '%s'", 'bayesianFlow', node_args)
         return run_flow('bayesianFlow', node_args)
 
-    def create_liveness_probe(self):
-        """Liveness probe."""
-        if os.path.isfile(PROBE_FILE_LOCATION):
-            logger.info("Clean existing liveness probe")
-            os.remove(PROBE_FILE_LOCATION)
-        else:
-            probe = os.path.dirname(PROBE_FILE_LOCATION)
-            if not os.path.exists(probe):
-                logger.info("Create liveness probe")
-                os.makedirs(probe)
-
-        return True
-
     def run(self):
         """Run the monitor."""
-        logger.info("Registered signal handler for liveness probe")
         logger.info("Sleep interval: {}".format(SLEEP_INTERVAL))
         logger.info("Enabled scheduling: {}".format(ENABLE_SCHEDULING))
 
