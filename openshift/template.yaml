@@ -156,7 +156,7 @@ parameters:
   displayName: Docker image
   required: true
   name: DOCKER_IMAGE
-  value: "openshiftio/fabric8-analytics-f8a-release-monitor"
+  value: "openshiftio/fabric8-analytics-release-monitor"
 
 - description: Image tag
   displayName: Image tag
