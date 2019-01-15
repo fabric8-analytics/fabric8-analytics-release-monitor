@@ -79,8 +79,6 @@ objects:
             value: ${NPM_URL}
           - name: PYPI_URL
             value: ${PYPI_URL}
-          - name: PROBE_FILE_LOCATION
-            value: ${PROBE_FILE_LOCATION}
           - name: DEBUG
             value: ${DEBUG}
           image: "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
@@ -88,19 +86,17 @@ objects:
           livenessProbe:
             exec:
               command:
-              - cat
-              - /tmp/release_monitoring/liveness.txt
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 30
+              - "true"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 20
           readinessProbe:
             exec:
               command:
-              - cat
-              - /tmp/release_monitoring/liveness.txt
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 30
+              - "true"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 20
           resources:
             requests:
               memory: "128Mi"
@@ -173,12 +169,6 @@ parameters:
   required: true
   name: REPLICAS
   value: "1"
-
-- description: Liveness probe file location
-  displayName: Liveness probe file location
-  required: true
-  name: PROBE_FILE_LOCATION
-  value: "/tmp/release_monitoring/liveness.txt"
 
 - description: Variable which defines whether app is in debug mode
   displayName: Enable debuging
