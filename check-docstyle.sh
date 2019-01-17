@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 directories="release_monitor integration_tests tests"
-separate_files="setup.py"
+separate_files="setup.py run.py"
 pass=0
 fail=0
 
