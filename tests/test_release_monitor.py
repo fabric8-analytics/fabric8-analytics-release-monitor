@@ -388,6 +388,7 @@ def test_npm_monitor_fetch_feed(_foo):
 
 
 def test_create_release_monitor():
+    """Create the object and don't fail."""
     assert ReleaseMonitor()
 
 
