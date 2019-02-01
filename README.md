@@ -5,14 +5,53 @@ Service for monitoring of latest updates to upstream packages
 ### Configuration
 Release monitor is configurable by following environment variables.
 
-NPM_URL - HTTP adress of npmjs registry 
+NPM_URL - URL of the NPM registry (must contain the protocol, e.g. `https://`) 
 
-PYPI_URL - HTTP adress of pypi registry
+PYPI_URL - URL of the PyPi registry (again starting with `https://`)
  
-ENABLE_SCHEDULING - Boolean variable for development and debugging purposes. If true no new jobs will be scheduled.
+ENABLE_SCHEDULING - If enabled, notifications about new packages will be sent via selinon into the
+ingestion pipeline. Takes either `true` or `yes`.
   
-SLEEP_INTERVAL - interval between fetching latest RSS feeds from registries
+SLEEP_INTERVAL - Interval between fetching latest RSS feeds from registries (in minutes).
 
+### Running
+
+Run it either from the command line using the `run.py` file or using `docker` (`podman?` ;-) ).
+
+### Architecture
+
+The process is very simple. It periodically fetches RSS feeds from the upstream repositories and
+only calculates a relative complement of the set of the old updates and new updates.
+
+```
+   start
+     |
+     V
+{old} := fetch updates
+     |
+     |<------------------------|
+     |                         |
+     V                         |
+  wait for the                 |
+specified period               |
+     |                         |
+     V                         |
+{new} := fetch updates         |
+     |                         |
+     V                         |
+{updates} := {new} \ {old}     |
+     |                         |
+     V                         |
+schedule({updates})            |
+     |                         |
+     V                         |
+{old} = {new}                  |
+     |_________________________|
+   
+
+```
+
+---------------------------------
 
 ### Footnotes
 
