@@ -5,14 +5,14 @@ Service for monitoring of latest updates to upstream packages
 ### Configuration
 Release monitor is configurable by following environment variables.
 
-NPM_URL - URL of the NPM registry (must contain the protocol, e.g. `https://`) 
+`NPM_URL` - URL of the NPM registry (must contain the protocol, e.g. `https://`) 
 
-PYPI_URL - URL of the PyPi registry (again starting with `https://`)
+`PYPI_URL` - URL of the PyPi registry (again starting with `https://`)
  
-ENABLE_SCHEDULING - If enabled, notifications about new packages will be sent via selinon into the
+`ENABLE_SCHEDULING` - If enabled, notifications about new packages will be sent via selinon into the
 ingestion pipeline. Takes either `true` or `yes`.
   
-SLEEP_INTERVAL - Interval between fetching latest RSS feeds from registries (in minutes).
+`SLEEP_INTERVAL` - Interval between fetching latest RSS feeds from registries (in minutes; defaults to 20).
 
 ### Running
 
@@ -27,7 +27,7 @@ only calculates a relative complement of the set of the old updates and new upda
    start
      |
      V
-{old} := fetch updates
+{old} := fetch updates from RSS feeds of PyPi and NPM
      |
      |<------------------------|
      |                         |
@@ -36,13 +36,15 @@ only calculates a relative complement of the set of the old updates and new upda
 specified period               |
      |                         |
      V                         |
-{new} := fetch updates         |
+{new} := fetch updates again   |
      |                         |
      V                         |
 {updates} := {new} \ {old}     |
      |                         |
      V                         |
-schedule({updates})            |
+schedule({updates}) into the   |
+f8a pipeline as a selinon flow |
+(specific to this project)     |
      |                         |
      V                         |
 {old} = {new}                  |
