@@ -218,6 +218,7 @@ class ReleaseMonitor():
             'ecosystem': ecosystem,
             'name': normalize_package_name(ecosystem, name),
             'version': version,
+            'force': True,
             'recursive_limit': 0
         }
 
