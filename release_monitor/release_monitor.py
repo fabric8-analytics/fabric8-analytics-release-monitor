@@ -19,6 +19,7 @@ import feedparser
 import requests
 
 from f8a_worker.setup_celery import init_celery, init_selinon
+from f8a_worker.utils import normalize_package_name
 from selinon import run_flow
 
 # local imports:
@@ -215,7 +216,7 @@ class ReleaseMonitor():
         """
         node_args = {
             'ecosystem': ecosystem,
-            'name': name,
+            'name': normalize_package_name(ecosystem, name),
             'version': version,
             'recursive_limit': 0
         }
