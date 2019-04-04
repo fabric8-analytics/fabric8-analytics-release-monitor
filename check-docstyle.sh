@@ -13,7 +13,7 @@ function prepare_venv() {
     fi
     which python
     which python3
-    which python34
+    which python3.4
 
     python34 -m venv venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
     #${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
