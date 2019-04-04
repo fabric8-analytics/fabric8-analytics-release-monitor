@@ -13,7 +13,7 @@ function prepare_venv() {
     fi
     if [ $? -eq 1 ]; then
         # still don't have virtual environment -> use python3.4 directly
-        python3.4 -m venv venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
+        python3.4 -m venv venv && source venv/bin/activate && python3 `which pip3.4` install pydocstyle
     else
         ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
     fi
