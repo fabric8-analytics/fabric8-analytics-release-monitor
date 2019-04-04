@@ -21,9 +21,8 @@ prep() {
     yum -y update
     yum install epel-release -y
     yum -y install gcc python34 python34-pip python34-requests python34-devel docker git which python34-virtualenv
-    echo `which pip`
-    echo `which pip34`
-    echo `which pip3.4`
+    ln -s /usr/bin/pip3 `which pip3.4`
+    pip3 --version
     systemctl start docker
 }
 
