@@ -12,7 +12,7 @@ function prepare_venv() {
         VIRTUALENV=`which virtualenv-3`
     fi
 
-    python3 -m venv venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
+    python34 -m venv venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
     #${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
 }
 
