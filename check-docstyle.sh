@@ -6,6 +6,9 @@ pass=0
 fail=0
 
 function prepare_venv() {
+    which virtualenv
+    which virtualenv-3
+    which venv
     VIRTUALENV=`which virtualenv`
     if [ $? -eq 1 ]; then
         # python34 which is in CentOS does not have virtualenv binary
