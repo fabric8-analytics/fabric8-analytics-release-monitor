@@ -25,7 +25,7 @@ prep() {
     echo "XXXXXXXX"
     rpm --eval '%python3_pkgversion'
     echo "XXXXXXXX"
-    pip3 install virtualenv
+    "$(which pip3)" install virtualenv
     systemctl start docker
 }
 
