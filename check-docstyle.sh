@@ -6,16 +6,14 @@ pass=0
 fail=0
 
 function prepare_venv() {
-    which virtualenv
-    which virtualenv-3
-    which venv
     VIRTUALENV=`which virtualenv`
     if [ $? -eq 1 ]; then
         # python34 which is in CentOS does not have virtualenv binary
         VIRTUALENV=`which virtualenv-3`
     fi
 
-    ${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
+    python3 -m venv venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
+    #${VIRTUALENV} -p python3 venv && source venv/bin/activate && python3 `which pip3` install pydocstyle
 }
 
 # run the pydocstyle for all files that are provided in $1
