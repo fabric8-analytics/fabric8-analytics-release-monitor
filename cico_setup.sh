@@ -23,6 +23,8 @@ prep() {
     yum -y install gcc python34-pip python34-requests python34-devel docker git which python34-virtualenv
     pip3 install virtualenv
     systemctl start docker
+    yum install -y python-srpm-macros
+    rpm --eval '%python3_pkgversion'
 }
 
 build_image() {
