@@ -20,12 +20,9 @@ load_jenkins_vars() {
 prep() {
     yum -y update
     yum install epel-release -y
-    yum -y install gcc python34-pip python34-requests python34-devel docker git which python34-virtualenv
+    yum -y install gcc python34 python34-pip python34-requests python34-devel docker git which python34-virtualenv
     yum install -y python-srpm-macros
-    echo "XXXXXXXX"
-    rpm --eval '%python3_pkgversion'
-    echo "XXXXXXXX"
-    # "$(which pip3)" install virtualenv
+    "$(which pip3)" install virtualenv
     systemctl start docker
 }
 
