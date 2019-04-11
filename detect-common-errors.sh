@@ -1,6 +1,6 @@
 #!/bin/bash
 
-directories="release_monitor/ integration_tests/ tests"
+directories="release_monitor/ integration_tests/ tests tools"
 separate_files="setup.py run.py"
 
 pass=0
