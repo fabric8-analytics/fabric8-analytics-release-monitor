@@ -20,8 +20,8 @@ load_jenkins_vars() {
 prep() {
     yum -y update
     yum install epel-release -y
-    yum -y install gcc python34-pip python34-requests python34-devel docker git which python34-virtualenv
-    pip3.4 install virtualenv
+    yum -y install gcc python36-pip python36-requests python36-devel docker git which python36-virtualenv
+    pip3 install virtualenv
     systemctl start docker
 }
 
