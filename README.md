@@ -116,3 +116,19 @@ The script named `check-bashscripts.sh` can be used to check all BASH scripts (i
 ```
 
 Please see [the following link](https://github.com/koalaman/shellcheck) for further explanation, how the ShellCheck works and which issues can be detected.
+
+#### Python version checker
+
+This script has to be called with two command line arguments:
+expected_major_version expected_minor_version
+
+The script then check if actual Python version (major+minor) is
+the same or newer than expected version.
+
+```
+Usage:
+python check_python_version.py 2.7
+python3 check_python_version.py 3.6
+python3 check_python_version.py 3.7
+```
+etc.
