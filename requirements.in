@@ -2,3 +2,4 @@ requests
 feedparser
 psutil
 typing
+-e git+https://github.com/msehnout/f8a-messaging-library.git@master#egg=f8a_mb

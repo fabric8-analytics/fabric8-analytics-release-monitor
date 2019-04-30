@@ -4,11 +4,14 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
-certifi==2018.11.29       # via requests
+-e git+https://github.com/msehnout/f8a-messaging-library.git@master#egg=f8a_mb
+certifi==2019.3.9         # via requests
 chardet==3.0.4            # via requests
+docopt==0.6.2             # via stomp.py
 feedparser==5.2.1
 idna==2.8                 # via requests
-psutil==5.4.8
+psutil==5.6.2
 requests==2.21.0
+stomp.py==4.1.22
 typing==3.6.6
-urllib3==1.24.1           # via requests
+urllib3==1.24.2           # via requests

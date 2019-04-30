@@ -4,6 +4,7 @@
 
 # std imports:
 import logging
+import json
 import os
 import sys
 
@@ -18,9 +19,9 @@ assert Union
 import feedparser
 import requests
 
-from f8a_worker.setup_celery import init_celery, init_selinon
+from f8a_mb import MbProducer
+from f8a_mb.path import TOPIC_RELEASE_MONITORING_PYPI, TOPIC_RELEASE_MONITORING_NPM
 from f8a_worker.utils import normalize_package_name
-from selinon import run_flow
 
 # local imports:
 from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, SLEEP_INTERVAL
@@ -203,8 +204,8 @@ class ReleaseMonitor():
 
         # Initialize Selinon if we want to run in production
         if ENABLE_SCHEDULING:
-            init_celery(result_backend=False)
-            init_selinon()
+            self.message_bus_npm = MbProducer(TOPIC_RELEASE_MONITORING_NPM)
+            self.message_bus_pypi = MbProducer(TOPIC_RELEASE_MONITORING_PYPI)
 
     def run_package_analysis(self, name, ecosystem, version):
         """Run Selinon flow for analyses.
@@ -224,7 +225,20 @@ class ReleaseMonitor():
 
         logger.info("Scheduling Selinon flow '%s' "
                     "with node_args: '%s'", 'bayesianFlow', node_args)
-        return run_flow('bayesianFlow', node_args)
+        #return run_flow('bayesianFlow', node_args)
+
+    def publish_message(self, name: str, ecosystem: str, version: str):
+        node_args = {
+            'ecosystem': ecosystem,
+            'name': normalize_package_name(ecosystem, name),
+            'version': version,
+        }
+        if ecosystem == "pypi":
+            logger.info("Publishing: {}".format(str(node_args)))
+            self.message_bus_pypi.publish(json.dumps(node_args))
+        else:
+            logger.info("Publishing: {}".format(str(node_args)))
+            self.message_bus_npm.publish(json.dumps(node_args))
 
     def run(self):
         """Run the monitor."""
@@ -234,15 +248,15 @@ class ReleaseMonitor():
         while True:
             for pkg in self.pypi_monitor.get_updated_packages():
                 if ENABLE_SCHEDULING:
-                    logger.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
-                    self.run_package_analysis(pkg.name, 'pypi', pkg.version)
+                    # logger.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+                    self.publish_message(pkg.name, 'pypi', pkg.version)
                 else:
                     logger.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
 
             for pkg in self.npm_monitor.get_updated_packages():
                 if ENABLE_SCHEDULING:
-                    logger.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
-                    self.run_package_analysis(pkg.name, 'npm', pkg.version)
+                    # logger.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
+                    self.publish_message(pkg.name, 'npm', pkg.version)
                 else:
                     logger.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
 
