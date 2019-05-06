@@ -230,7 +230,7 @@ class ReleaseMonitor():
     def publish_message(self, name: str, ecosystem: str, version: str):
         node_args = {
             'ecosystem': ecosystem,
-            'name': normalize_package_name(ecosystem, name),
+            'name': name,  # TODO: enable me again: normalize_package_name(ecosystem, name),
             'version': version,
         }
         if ecosystem == "pypi":
