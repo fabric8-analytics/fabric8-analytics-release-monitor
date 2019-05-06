@@ -245,22 +245,29 @@ class ReleaseMonitor():
         logger.info("Sleep interval: {}".format(SLEEP_INTERVAL))
         logger.info("Enabled scheduling: {}".format(ENABLE_SCHEDULING))
 
+        counter = 0
         while True:
-            for pkg in self.pypi_monitor.get_updated_packages():
-                if ENABLE_SCHEDULING:
-                    # logger.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
-                    self.publish_message(pkg.name, 'pypi', pkg.version)
-                else:
-                    logger.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+            counter += 1
+            if ENABLE_SCHEDULING:
+                self.publish_message('foo', 'pypi', str(counter))
+            sleep(2)
 
-            for pkg in self.npm_monitor.get_updated_packages():
-                if ENABLE_SCHEDULING:
-                    # logger.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
-                    self.publish_message(pkg.name, 'npm', pkg.version)
-                else:
-                    logger.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
-
-            sleep(60 * SLEEP_INTERVAL)
+        #while True:
+        #    for pkg in self.pypi_monitor.get_updated_packages():
+        #        if ENABLE_SCHEDULING:
+        #            # logger.info("Scheduling package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+        #            self.publish_message(pkg.name, 'pypi', pkg.version)
+        #        else:
+        #            logger.info("Processing package from PyPI: '%s':'%s'", pkg.name, pkg.version)
+        #
+        #    for pkg in self.npm_monitor.get_updated_packages():
+        #        if ENABLE_SCHEDULING:
+        #            # logger.info("Scheduling package from NPM: '%s':'%s'", pkg.name, pkg.version)
+        #            self.publish_message(pkg.name, 'npm', pkg.version)
+        #        else:
+        #            logger.info("Processing package from NPM: '%s':'%s'", pkg.name, pkg.version)
+        #
+        #    sleep(60 * SLEEP_INTERVAL)
 
 
 if __name__ == '__main__':
