@@ -250,7 +250,7 @@ class ReleaseMonitor():
             counter += 1
             if ENABLE_SCHEDULING:
                 self.publish_message('foo', 'pypi', str(counter))
-            sleep(2)
+            sleep(SLEEP_INTERVAL)
 
         #while True:
         #    for pkg in self.pypi_monitor.get_updated_packages():
