@@ -12,3 +12,4 @@ psutil==5.4.8
 requests==2.21.0
 typing==3.6.6
 urllib3==1.24.1           # via requests
+sentry-sdk==0.7.2
