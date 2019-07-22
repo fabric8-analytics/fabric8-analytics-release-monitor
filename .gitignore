@@ -109,3 +109,6 @@ html/
 latex/
 
 .DS_Store
+
+*.err
+*.log
