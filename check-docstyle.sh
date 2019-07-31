@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
-directories="release_monitor integration_tests tests tools"
-separate_files="setup.py run.py"
+IFS=$'\n'
+
+# list of directories with sources to check
+directories=$(cat directories.txt)
+
+# list of separate files to check
+separate_files=$(cat files.txt)
 
 pass=0
 fail=0
@@ -24,8 +29,8 @@ function prepare_venv() {
 function check_files() {
     for source in $1
     do
-        echo $source
-        pydocstyle --count $source
+        echo "$source"
+        pydocstyle --count "$source"
         if [ $? -eq 0 ]
         then
             echo "    Pass"
@@ -45,7 +50,7 @@ function check_files() {
 echo "----------------------------------------------------"
 echo "Checking documentation strings in all sources stored"
 echo "in following directories:"
-echo $directories
+echo "$directories"
 echo "----------------------------------------------------"
 echo
 
@@ -54,7 +59,7 @@ echo
 # checks for the whole directories
 for directory in $directories
 do
-    files=`find $directory -path $directory/venv -prune -o -name '*.py' -print`
+    files=$(find "$directory" -path "$directory/venv" -prune -o -name '*.py' -print)
 
     check_files "$files"
 done
@@ -63,7 +68,7 @@ done
 echo
 echo "----------------------------------------------------"
 echo "Checking documentation strings in the following files"
-echo $separate_files
+echo "$separate_files"
 echo "----------------------------------------------------"
 
 check_files "$separate_files"
