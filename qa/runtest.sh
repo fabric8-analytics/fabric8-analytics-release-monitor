@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+pushd "${SCRIPT_DIR}/.." > /dev/null
+
 # fail if smth fails
 # the whole env will be running if test suite fails so you can debug
 set -e
@@ -44,3 +48,5 @@ codecov --token=a5dfdb4c-deb6-44d2-9d68-0c39cc26a9f6
 
 printf "%stests passed%s\n\n" "${GREEN}" "${NORMAL}"
 
+
+popd > /dev/null

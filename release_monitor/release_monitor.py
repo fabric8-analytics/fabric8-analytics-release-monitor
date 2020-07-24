@@ -192,7 +192,7 @@ class ReleaseMonitor():
     """Class which check rss feeds for new releases."""
 
     def __init__(self):
-        """Constructor."""
+        """Initialize Relase Monitor."""
         logger.info("Starting the monitor service")
 
         # Create PyPi monitor
