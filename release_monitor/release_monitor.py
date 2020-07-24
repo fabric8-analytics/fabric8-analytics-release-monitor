@@ -108,7 +108,7 @@ class PypiMonitor(AbstractMonitor):
         """Fetch PyPi RSS updates."""
         def create_package_from_pypi_dict(dict):
             title_parts = dict['title'].split(' ')
-            return Package(title_parts[0], title_parts[1])
+            return Package(str.lower(title_parts[0]), title_parts[1])
 
         list_of_pypi_updates = feedparser.parse(self.pypi_url + "rss/updates.xml").entries
         try:
