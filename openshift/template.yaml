@@ -51,6 +51,11 @@ objects:
               secretKeyRef:
                 name: aws
                 key: s3-secret-access-key
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: worker
+                key: sentry_dsn
           # this won't get used if running with SQS
           - name: RABBITMQ_SERVICE_SERVICE_HOST
             value: bayesian-broker
@@ -175,3 +180,9 @@ parameters:
   required: true
   name: DEBUG
   value: "False"
+
+- description: Sentry DSN
+  displayName: Sentry DSN
+  required: false
+  name: SENTRY_DSN
+  value: ""
