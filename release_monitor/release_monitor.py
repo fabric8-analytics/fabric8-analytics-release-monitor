@@ -21,6 +21,7 @@ import requests
 from f8a_worker.setup_celery import init_celery, init_selinon
 from f8a_worker.utils import normalize_package_name
 from selinon import run_flow
+import sentry_sdk
 
 # local imports:
 from release_monitor.defaults import NPM_URL, PYPI_URL, ENABLE_SCHEDULING, SLEEP_INTERVAL
@@ -39,6 +40,7 @@ def set_up_logger():
 
 
 logger = set_up_logger()
+sentry_sdk.init(os.environ.get("SENTRY_DSN"))
 
 
 class Package:
@@ -113,11 +115,13 @@ class PypiMonitor(AbstractMonitor):
         list_of_pypi_updates = feedparser.parse(self.pypi_url + "rss/updates.xml").entries
         try:
             updated_packages = set(map(create_package_from_pypi_dict, list_of_pypi_updates))
-        except KeyError:
+        except KeyError as e:
             # if the "title" does not exist, catch the error and return nothing
+            logger.error('Titles does not exist : {e}'.format(e=str(e)))
             return set()
-        except IndexError:
+        except IndexError as e:
             # if the "title" does not contain name and version, catch the error and return nothing
+            logger.error('name and version does not exist : {e}'.format(e=str(e)))
             return set()
 
         return updated_packages
@@ -138,7 +142,8 @@ class NPMMonitor(AbstractMonitor):
         try:
             r = set(map(lambda x: x['title'], npm_feed.entries))
             return r
-        except KeyError:
+        except KeyError as e:
+            logger.error('npm package key not found : {e}'.format(e=str(e)))
             return None
 
     @staticmethod
@@ -151,11 +156,13 @@ class NPMMonitor(AbstractMonitor):
             if req.status_code == 200:
                 body = req.json()
                 return body['latest']
-        except ValueError:
+        except ValueError as e:
             # The body was not a valid JSON
+            logger.error('valid JSON key not found : {e}'.format(e=str(e)))
             return None
-        except KeyError:
+        except KeyError as e:
             # The body was a valid JSON, but it did not contain version field
+            logger.error('version key not found : {e}'.format(e=str(e)))
             return None
 
     def fetch_feed(self):
